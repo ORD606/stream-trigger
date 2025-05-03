@@ -2,7 +2,7 @@ name: Record Stream
 
 on:
   repository_dispatch:
-    types: [record_stream]  # This event type matches the one sent from your app (main.py)
+    types: [record_stream]
 
 jobs:
   record:
@@ -17,38 +17,40 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y ffmpeg
 
-    - name: Create recordings directory
-      run: mkdir -p recordings  # Ensure the recordings directory exists
-
-    - name: Set up environment variables
+    - name: Install gdrive
       run: |
-        echo "GITHUB_PAT=${{ secrets.GITHUB_PAT }}" >> $GITHUB_ENV
-        echo "GITHUB_REPO=${{ secrets.GITHUB_REPO }}" >> $GITHUB_ENV
+        curl -L -o gdrive.tar.gz https://github.com/prasmussen/gdrive/releases/download/2.1.1/gdrive-linux-x64
+        chmod +x gdrive-linux-x64
+        sudo mv gdrive-linux-x64 /usr/local/bin/gdrive
 
-    - name: Record HLS stream
+    - name: Prepare for Recording
+      run: mkdir -p recordings
+
+    - name: Record Stream
       run: |
-        # Extract parameters from the event payload (sent from your app)
         station_name="${{ github.event.client_payload.station_name }}"
         stream_url="${{ github.event.client_payload.stream_url }}"
         duration="${{ github.event.client_payload.duration }}"
+        timestamp=$(date +'%Y%m%d_%H%M%S')
+        output_file="recordings/${station_name}_${timestamp}.mp3"
 
-        echo "Recording stream for station: $station_name"
-        echo "Stream URL: $stream_url"
-        echo "Duration: $duration seconds"
+        echo "Recording stream: $stream_url for $duration seconds..."
+        ffmpeg -y -i "$stream_url" -c:a libmp3lame -b:a 320k -t "$duration" "$output_file"
 
-        # HLS stream recording command
-        output_file="recordings/${station_name}_$(date +'%Y%m%d_%H%M%S').mp3"
-        
-        # Record the HLS stream using FFmpeg
-        ffmpeg -y \
-          -i "$stream_url" \
-          -c:a libmp3lame -b:a 320k -t "$duration" \
-          -max_reload 1000 -timeout 30 \
-          "$output_file"
+        echo "Sending status to Glitch..."
+        curl -X POST https://your-glitch-project-url/status-update \
+          -H "Content-Type: application/json" \
+          -d "{\"status\":\"✅ Recording complete: $output_file\",\"task_id\":\"${timestamp}\"}"
 
     - name: Upload to Google Drive
+      env:
+        GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}  # You need to store this manually
       run: |
-        echo "Uploading $output_file to Google Drive..."
-        # Use the previously shared upload_file_to_drive function to upload the recording
-        # Add the necessary code to upload the file after it's recorded
-        # (ensure that the `upload_file_to_drive` function is defined elsewhere in your code)
+        output_file=$(ls recordings/*.mp3 | head -n 1)
+        echo "Uploading $output_file..."
+        gdrive upload "$output_file"
+
+        echo "Sending upload status to Glitch..."
+        curl -X POST https://your-glitch-project-url/status-update \
+          -H "Content-Type: application/json" \
+          -d "{\"status\":\"✅ Upload complete: $output_file\",\"task_id\":\"upload_${timestamp}\"}"
