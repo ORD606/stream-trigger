@@ -17,6 +17,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y ffmpeg
 
+    - name: Create recordings directory
+      run: mkdir -p recordings  # Ensure the recordings directory exists
+
     - name: Set up environment variables
       run: |
         echo "GITHUB_PAT=${{ secrets.GITHUB_PAT }}" >> $GITHUB_ENV
@@ -46,6 +49,6 @@ jobs:
     - name: Upload to Google Drive
       run: |
         echo "Uploading $output_file to Google Drive..."
-        # You should have the appropriate script here to upload the file to Google Drive
         # Use the previously shared upload_file_to_drive function to upload the recording
-        # Add the necessary code for the upload
+        # Add the necessary code to upload the file after it's recorded
+        # (ensure that the `upload_file_to_drive` function is defined elsewhere in your code)
