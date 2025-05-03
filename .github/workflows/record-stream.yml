@@ -1,0 +1,51 @@
+name: Record Stream
+
+on:
+  repository_dispatch:
+    types: [record_stream]  # This event type matches the one sent from your app (main.py)
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    - name: Set up environment variables
+      run: |
+        echo "GITHUB_PAT=${{ secrets.GITHUB_PAT }}" >> $GITHUB_ENV
+        echo "GITHUB_REPO=${{ secrets.GITHUB_REPO }}" >> $GITHUB_ENV
+
+    - name: Record HLS stream
+      run: |
+        # Extract parameters from the event payload (sent from your app)
+        station_name="${{ github.event.client_payload.station_name }}"
+        stream_url="${{ github.event.client_payload.stream_url }}"
+        duration="${{ github.event.client_payload.duration }}"
+
+        echo "Recording stream for station: $station_name"
+        echo "Stream URL: $stream_url"
+        echo "Duration: $duration seconds"
+
+        # HLS stream recording command
+        output_file="recordings/${station_name}_$(date +'%Y%m%d_%H%M%S').mp3"
+        
+        # Record the HLS stream using FFmpeg
+        ffmpeg -y \
+          -i "$stream_url" \
+          -c:a libmp3lame -b:a 320k -t "$duration" \
+          -max_reload 1000 -timeout 30 \
+          "$output_file"
+
+    - name: Upload to Google Drive
+      run: |
+        echo "Uploading $output_file to Google Drive..."
+        # You should have the appropriate script here to upload the file to Google Drive
+        # Use the previously shared upload_file_to_drive function to upload the recording
+        # Add the necessary code for the upload
