@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/*": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/ping",   // This is the /ping route
+      "schedule": "*/5 * * * *"  // This cron expression runs the job every 5 minutes
+    }
+  ]
+}
