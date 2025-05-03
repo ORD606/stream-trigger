@@ -1,13 +1,15 @@
 {
-  "functions": {
-    "api/*": {
-      "maxDuration": 30
-    }
-  },
-  "crons": [
+  "version": 2,
+  "builds": [
     {
-      "path": "/api/ping",   // This is the /ping route
-      "schedule": "*/5 * * * *"  // This cron expression runs the job every 5 minutes
+      "src": "api/trigger-github.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/trigger-github",
+      "dest": "/api/trigger-github.js"
     }
   ]
 }
