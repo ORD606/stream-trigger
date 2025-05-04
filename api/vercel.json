@@ -2,17 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "index.js",
+      "src": "api/trigger-github.js",
       "use": "@vercel/node"
     }
   ],
-  "env": {
-    "GOOGLE_SERVICE_ACCOUNT_BASE64": "@google-service-account-base64"
-  },
   "routes": [
     {
       "src": "/api/trigger",
-      "dest": "/api/trigger.js"
+      "dest": "api/trigger-github.js"
     }
   ]
 }
