@@ -24,6 +24,8 @@ export default async function handler(req, res) {
         frequency: frequency || "once"
       };
 
+      console.log("📡 Forwarding payload to trigger-github:", payload);
+
       const response = await fetch(`${process.env.VERCEL_API_URL}/api/trigger-github`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
