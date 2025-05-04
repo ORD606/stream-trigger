@@ -5,7 +5,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-# Decode the base64 encoded service account credentials
+# Decode the base64 encoded service account key
 def get_service_account_credentials():
     # Get the Base64 encoded service account key from Vercel's environment variables
     encoded_credentials = os.getenv('GOOGLE_SERVICE_ACCOUNT_BASE64')
@@ -45,4 +45,3 @@ def upload_file_to_drive(file_path):
 
     # Return the file ID of the uploaded file
     return file['id']
-
