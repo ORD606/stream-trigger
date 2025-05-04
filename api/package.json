@@ -7,7 +7,7 @@
     "start": "node trigger-github.js"
   },
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7"  // Ensure you're using version 2.x for compatibility with CommonJS
   }
 }
 
