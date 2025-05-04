@@ -1,31 +1,36 @@
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+const fetch = require('node-fetch');
+const { GITHUB_API_URL, GITHUB_PAT, VERCEL_API_URL, VERCEL_API_KEY } = process.env;
 
-  try {
-    const { station_name, stream_url, start_time, end_time, frequency } = req.body;
+async function triggerVercelRecording(stationName, streamUrl, startTime, endTime, frequency) {
+    try {
+        const payload = {
+            station_name: stationName,
+            stream_url: streamUrl,
+            start_time: startTime,
+            end_time: endTime,
+            frequency: frequency
+        };
 
-    if (!station_name || !stream_url || !start_time || !end_time) {
-      return res.status(400).json({ error: 'Missing required fields' });
+        console.log('🔧 Triggering Vercel recording with payload:', payload);
+
+        const response = await fetch(`${VERCEL_API_URL}/record`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${VERCEL_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            console.log(`✅ Vercel recording scheduled successfully: ${JSON.stringify(data)}`);
+        } else {
+            console.error(`❌ Error from Vercel: ${data.error}`);
+        }
+    } catch (error) {
+        console.error(`⚠️ Error triggering Vercel recording: ${error.message}`);
     }
-
-    const duration = (new Date(end_time) - new Date(start_time)) / 1000;
-
-    const payload = {
-      station_name,
-      stream_url,
-      duration,
-      timestamp: new Date(start_time).toISOString(),
-      frequency,
-    };
-
-    console.log("🔁 Forwarding payload to GitHub Actions:", payload);
-
-    // Simulate success for now
-    return res.status(200).json({ message: 'Recording scheduled', payload });
-  } catch (err) {
-    console.error("❌ Error in trigger-github:", err);
-    return res.status(500).json({ error: 'Internal server error', details: err.message });
-  }
 }
+
+triggerVercelRecording('BBC Radio 6Music', 'https://stream.example.com', '2025-05-03 10:13 PM', '2025-05-03 10:15 PM', 'once');
