@@ -13,6 +13,7 @@ module.exports = async (req, res) => {
 
     // Validate required fields
     if (!station_name || !stream_url || !start_time || !end_time) {
+      console.error('❌ Missing required fields in request body:', req.body);
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -43,15 +44,17 @@ module.exports = async (req, res) => {
       body: JSON.stringify(payload), // Ensure payload is properly stringified
     });
 
-    // Parse the response
-    const data = await response.json();
+    // Log the full response for debugging
+    const text = await response.text();
+    console.log(`📬 Response from /record: Status ${response.status}, Body: ${text}`);
 
     if (response.ok) {
+      const data = JSON.parse(text); // Parse the JSON response
       console.log('✅ Vercel recording triggered successfully:', data);
       return res.status(200).json({ message: 'Recording triggered successfully', data });
     } else {
-      console.error('❌ Error from /record:', data);
-      return res.status(500).json({ error: 'Recording trigger failed', details: data });
+      console.error('❌ Error from /record:', text);
+      return res.status(500).json({ error: 'Recording trigger failed', details: text });
     }
   } catch (error) {
     console.error('❌ Server error in trigger-github.js:', error.message);
