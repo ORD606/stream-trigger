@@ -20,12 +20,6 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Stream URL must be an absolute URL' });
     }
 
-    // Validate that the stream_url contains ".m3u8" for HLS compatibility
-    if (!stream_url.includes('.m3u8')) {
-      console.error(`❌ Invalid stream_url: ${stream_url}. It must point to an HLS (.m3u8) playlist.`);
-      return res.status(400).json({ error: 'Stream URL must point to an HLS (.m3u8) playlist' });
-    }
-
     const payload = {
       station_name,
       stream_url,
