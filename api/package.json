@@ -1,8 +1,1 @@
-{
-  "name": "vercel-record-trigger",
-  "version": "1.0.0",
-  "main": "trigger-github.js",
-  "dependencies": {
-    "node-fetch": "^2.6.11"
-  }
-}
+
