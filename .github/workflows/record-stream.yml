@@ -14,46 +14,59 @@ jobs:
 
       - name: Set Up FFmpeg
         run: |
+          echo "🛠️ Updating packages and installing FFmpeg..."
           sudo apt-get update
           sudo apt-get install -y ffmpeg || {
-            echo "FFmpeg installation failed"
+            echo "❌ FFmpeg installation failed"
             exit 1
           }
+          echo "✅ FFmpeg installed"
 
       - name: Prepare for Recording
-        run: mkdir -p recordings
+        run: |
+          echo "📁 Creating recordings directory..."
+          mkdir -p recordings
+          echo "✅ Directory created"
 
       - name: Record Stream
         run: |
+          echo "🎙️ Starting stream recording..."
           station_name="${{ github.event.client_payload.station_name }}"
           stream_url="${{ github.event.client_payload.stream_url }}"
           duration="${{ github.event.client_payload.duration }}"
           timestamp=$(date +'%Y%m%d_%H%M%S')
           output_file="recordings/${station_name}_${timestamp}.mp3"
-          echo "Recording stream: $stream_url for $duration seconds..."
+          echo "▶️ Recording stream from $stream_url for $duration seconds"
           ffmpeg -y -i "$stream_url" -c:a libmp3lame -b:a 320k -t "$duration" "$output_file" || {
-            echo "Recording failed"
+            echo "❌ Recording failed"
             exit 1
           }
+          echo "✅ Recording complete: $output_file"
 
       - name: Set Up Python Environment
         run: |
+          echo "🐍 Setting up Python environment..."
           python3 -m pip install --upgrade pip
           pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
+          echo "✅ Python dependencies installed"
 
       - name: Set Up Google Cloud Credentials
         run: |
+          echo "🔐 Setting up Google Cloud credentials..."
           echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service_account.json
+          echo "✅ Credentials written to file"
 
       - name: Debug: List Files
         run: |
-          echo "Current directory contents:"
+          echo "🧾 Listing files in the workspace..."
           ls -R
 
       - name: Upload to Google Drive
         run: |
+          echo "📤 Preparing to upload to Google Drive..."
           output_file=$(ls recordings/*.mp3 | head -n 1)
-          echo "Uploading $output_file to Google Drive..."
+          echo "🎯 Uploading file: $output_file to folder ID: $GDRIVE_FOLDER_ID"
           python3 google_drive_upload.py "$output_file" "$GDRIVE_FOLDER_ID"
+          echo "✅ Upload complete"
         env:
           GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
