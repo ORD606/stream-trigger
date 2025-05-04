@@ -9,32 +9,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up FFmpeg
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg
+      - name: Set up FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-    - name: Prepare for Recording
-      run: mkdir -p recordings
+      - name: Prepare for Recording
+        run: mkdir -p recordings
 
-    - name: Record Stream
-      run: |
-        station_name="${{ github.event.client_payload.station_name }}"
-        stream_url="${{ github.event.client_payload.stream_url }}"
-        duration="${{ github.event.client_payload.duration }}"
-        timestamp=$(date +'%Y%m%d_%H%M%S')
-        output_file="recordings/${station_name}_${timestamp}.mp3"
+      - name: Record Stream
+        run: |
+          station_name="${{ github.event.client_payload.station_name }}"
+          stream_url="${{ github.event.client_payload.stream_url }}"
+          duration="${{ github.event.client_payload.duration }}"
+          timestamp=$(date +'%Y%m%d_%H%M%S')
+          output_file="recordings/${station_name}_${timestamp}.mp3"
 
-        echo "Recording stream: $stream_url for $duration seconds..."
-        ffmpeg -y -i "$stream_url" -c:a libmp3lame -b:a 320k -t "$duration" "$output_file"
+          echo "Recording stream: $stream_url for $duration seconds..."
+          ffmpeg -y -i "$stream_url" -c:a libmp3lame -b:a 320k -t "$duration" "$output_file"
 
-    - name: Upload to Google Drive
-      env:
-        GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
-      run: |
-        output_file=$(ls recordings/*.mp3 | head -n 1)
-        echo "Uploading $output_file..."
-        python3 google_drive_upload.py "$output_file"
+      - name: Upload to Google Drive
+        env:
+          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+        run: |
+          output_file=$(ls recordings/*.mp3 | head -n 1)
+          echo "Uploading $output_file..."
+          python3 google_drive_upload.py "$output_file"
