@@ -38,28 +38,10 @@ jobs:
           GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
         run: |
           timestamp=$(date +'%Y%m%d_%H%M%S')
-          output_file="recordings/${STATION_NAME}_${timestamp}.mp3"
-          echo "$output_file" > output_file_path.txt
-          echo "📤 Uploading $output_file to Google Drive..."
-
-          python3 - <<EOF
-import sys
-import os
-sys.path.append(".github/workflows")
-from google_drive_upload import retry_recording, authenticate_service_account, upload_file_to_drive
-
-output_file = os.environ.get("output_file", "$output_file")
-stream_url = os.environ.get("STREAM_URL", "$STREAM_URL")
-duration = int(os.environ.get("DURATION", "$DURATION"))
-station_name = os.environ.get("STATION_NAME", "$STATION_NAME")
-folder_id = os.environ.get("GDRIVE_FOLDER_ID", "$GDRIVE_FOLDER_ID")
-
-if retry_recording(output_file, stream_url, duration, station_name):
-    service = authenticate_service_account()
-    upload_file_to_drive(service, output_file, folder_id)
-else:
-    raise Exception("Recording failed after all retry attempts.")
-EOF
+          export OUTPUT_FILE="recordings/${STATION_NAME}_${timestamp}.mp3"
+          echo "$OUTPUT_FILE" > output_file_path.txt
+          echo "📤 Uploading $OUTPUT_FILE to Google Drive..."
+          python3 .github/workflows/record_and_upload.py
 
       - name: Debug - Show output file
         run: ls -lh recordings/
