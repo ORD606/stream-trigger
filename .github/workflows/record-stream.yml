@@ -51,9 +51,9 @@ jobs:
           ls -R
 
       - name: Upload to Google Drive
-        env:
-          GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
         run: |
           output_file=$(ls recordings/*.mp3 | head -n 1)
           echo "Uploading $output_file to Google Drive..."
           python3 google_drive_upload.py "$output_file" "$GDRIVE_FOLDER_ID"
+        env:
+          GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
