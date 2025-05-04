@@ -1,32 +1,51 @@
 const fetch = require('node-fetch');
 
-// Trigger GitHub Action via repository_dispatch
-const triggerGitHubAction = async (stationName, streamUrl, duration) => {
-    const token = 'your_github_token';  // GitHub Personal Access Token or OAuth token
-    const repoOwner = 'your_github_username_or_org';
-    const repoName = 'your_repository_name';
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-    const body = {
-        event_type: 'record_stream',  // Custom event type to trigger the workflow
-        client_payload: {
-            station_name: stationName,
-            stream_url: streamUrl,
-            duration: duration
-        }
+  const { station_name, stream_url, duration, timestamp, frequency } = req.body;
+
+  if (!station_name || !stream_url || !duration) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    const githubToken = process.env.GITHUB_TOKEN; // Set this in Vercel Environment Variables
+    const repoOwner = "your_github_username_or_org";
+    const repoName = "your_repository_name";
+
+    const payload = {
+      event_type: "record_stream",
+      client_payload: {
+        station_name,
+        stream_url,
+        duration,
+        timestamp,
+        frequency
+      }
     };
 
     const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/dispatches`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify(body)
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
     });
 
     if (response.ok) {
-        console.log('Successfully triggered GitHub Action!');
+      return res.status(200).json({ message: "🎬 GitHub workflow triggered" });
     } else {
-        console.error('Failed to trigger GitHub Action:', response.statusText);
+      const text = await response.text();
+      return res.status(500).json({ error: "GitHub API error", details: text });
     }
-};
+
+  } catch (err) {
+    console.error("Error triggering GitHub:", err);
+    return res.status(500).json({ error: "Internal error", details: err.message });
+  }
+}
