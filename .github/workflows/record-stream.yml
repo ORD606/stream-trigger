@@ -21,7 +21,7 @@ jobs:
 
       - name: Set up Google Cloud credentials
         run: |
-          echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service_account.json
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > service_account.json
 
       - name: Prepare recordings directory
         run: mkdir -p recordings
@@ -33,13 +33,17 @@ jobs:
           duration="${{ github.event.client_payload.duration }}"
           timestamp=$(date +'%Y%m%d_%H%M%S')
           output_file="recordings/${station_name}_${timestamp}.mp3"
+          echo "$output_file" > output_file_path.txt
           echo "🎙️ Recording stream: $stream_url for $duration seconds..."
           ffmpeg -y -i "$stream_url" -c:a libmp3lame -b:a 320k -t "$duration" "$output_file"
+
+      - name: Debug - Show output file
+        run: ls -lh recordings/
 
       - name: Upload to Google Drive
         env:
           GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
         run: |
-          output_file=$(ls recordings/*.mp3 | head -n 1)
+          output_file=$(cat output_file_path.txt)
           echo "📤 Uploading $output_file to Google Drive..."
           python3 google_drive_upload.py "$output_file" "$GDRIVE_FOLDER_ID"
