@@ -12,29 +12,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set Up FFmpeg
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg || {
-            echo "FFmpeg installation failed"
-            exit 1
-          }
-
-      - name: Set up Python and dependencies
-        run: |
-          sudo apt-get install -y python3-pip
+          sudo apt-get install -y ffmpeg python3-pip
           python3 -m pip install --upgrade pip
           pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib python-dotenv
 
       - name: Set up Google Cloud credentials
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: |
-          echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > service_account.json
-          echo "✅ service_account.json created"
+          echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service_account.json
+          echo "✅ Created service_account.json"
           head -n 5 service_account.json
 
-      - name: Prepare for Recording
+      - name: Prepare recordings directory
         run: mkdir -p recordings
 
       - name: Record Stream
@@ -44,26 +35,24 @@ jobs:
           duration="${{ github.event.client_payload.duration }}"
           timestamp=$(date +'%Y%m%d_%H%M%S')
           output_file="recordings/${station_name}_${timestamp}.mp3"
-
-          echo "Recording stream: $stream_url for $duration seconds..."
+          echo "🎙️ Starting recording for $station_name..."
           python3 google_drive_upload.py "$output_file" "$stream_url" "$duration" "$station_name"
 
-      - name: Debug: List Files
+      - name: Debug - List files
         run: |
-          echo "Root directory:"
-          ls -la
-          echo "Recordings:"
-          ls -la recordings || echo "❌ No recordings found."
+          echo "📁 Directory contents:"
+          ls -R
 
       - name: Upload to Google Drive
         env:
+          # Google Drive folder ID (replace with yours in GitHub secrets or here if static)
           GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
         run: |
-          echo "Searching for MP3 files..."
+          echo "☁️ Looking for recordings to upload..."
           output_file=$(ls recordings/*.mp3 2>/dev/null | head -n 1)
           if [ -z "$output_file" ]; then
             echo "❌ No MP3 file found to upload."
             exit 1
           fi
-          echo "Uploading $output_file to Google Drive..."
+          echo "📤 Uploading $output_file to Google Drive..."
           python3 google_drive_upload.py "$output_file" "$GDRIVE_FOLDER_ID"
