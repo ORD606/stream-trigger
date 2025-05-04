@@ -9,8 +9,15 @@ module.exports = async (req, res) => {
   try {
     const { station_name, stream_url, start_time, end_time, frequency } = req.body;
 
+    // Check if required fields are present
     if (!station_name || !stream_url || !start_time || !end_time) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate the stream_url to ensure it is an absolute URL
+    if (!stream_url.startsWith('http://') && !stream_url.startsWith('https://')) {
+      console.error(`❌ Invalid stream_url: ${stream_url}. It must be an absolute URL.`);
+      return res.status(400).json({ error: 'Stream URL must be an absolute URL' });
     }
 
     const payload = {
@@ -33,6 +40,7 @@ module.exports = async (req, res) => {
     });
 
     const data = await response.json();
+
     if (response.ok) {
       console.log('✅ Vercel recording triggered:', data);
       return res.status(200).json({ message: 'Recording triggered successfully', data });
