@@ -1,45 +1,32 @@
-export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    try {
-      const { station_name, stream_url, duration, timestamp } = req.body;
+const fetch = require('node-fetch');
 
-      if (!station_name || !stream_url || !duration || !timestamp) {
-        return res.status(400).json({ error: "Missing required fields" });
-      }
+// Trigger GitHub Action via repository_dispatch
+const triggerGitHubAction = async (stationName, streamUrl, duration) => {
+    const token = 'your_github_token';  // GitHub Personal Access Token or OAuth token
+    const repoOwner = 'your_github_username_or_org';
+    const repoName = 'your_repository_name';
 
-      // Prepare payload for GitHub Action
-      const payload = {
-        event_type: "record_stream", // Name of the GitHub workflow trigger
+    const body = {
+        event_type: 'record_stream',  // Custom event type to trigger the workflow
         client_payload: {
-          station_name,
-          stream_url,
-          duration,
-          timestamp,
-        },
-      };
+            station_name: stationName,
+            stream_url: streamUrl,
+            duration: duration
+        }
+    };
 
-      // Trigger GitHub Action
-      const githubRes = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPO}/dispatches`, {
+    const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/dispatches`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.GITHUB_PAT}`,
-          'Accept': 'application/vnd.github+json',
-          'Content-Type': 'application/json',
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
         },
-        body: JSON.stringify(payload),
-      });
+        body: JSON.stringify(body)
+    });
 
-      if (githubRes.ok) {
-        return res.status(200).json({ message: "✅ GitHub Action triggered" });
-      } else {
-        const error = await githubRes.text();
-        return res.status(500).json({ error: "❌ Failed to trigger GitHub Action", details: error });
-      }
-    } catch (error) {
-      console.error("Error triggering GitHub Action:", error);
-      return res.status(500).json({ error: "❌ Internal server error", details: error.message });
+    if (response.ok) {
+        console.log('Successfully triggered GitHub Action!');
+    } else {
+        console.error('Failed to trigger GitHub Action:', response.statusText);
     }
-  }
-
-  res.status(405).json({ error: "Method not allowed" });
-}
+};
