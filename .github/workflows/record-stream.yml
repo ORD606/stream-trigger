@@ -14,7 +14,6 @@ jobs:
 
       - name: Set Up FFmpeg
         run: |
-          echo "Installing FFmpeg..."
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
@@ -23,12 +22,12 @@ jobs:
 
       - name: Record Stream
         run: |
+          echo "Recording..."
           station_name="${{ github.event.client_payload.station_name }}"
           stream_url="${{ github.event.client_payload.stream_url }}"
           duration="${{ github.event.client_payload.duration }}"
           timestamp=$(date +'%Y%m%d_%H%M%S')
           output_file="recordings/${station_name}_${timestamp}.mp3"
-          echo "Recording stream from $stream_url for $duration seconds..."
           ffmpeg -y -i "$stream_url" -c:a libmp3lame -b:a 320k -t "$duration" "$output_file"
 
       - name: Set Up Python Environment
@@ -42,12 +41,12 @@ jobs:
 
       - name: Debug: List Files
         run: |
-          echo "Files in workspace:"
+          echo "Listing files:"
           ls -R
 
       - name: Upload to Google Drive
         env:
-          GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
+          GDRIVE_FOLDER_ID: 1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J
         run: |
           output_file=$(ls recordings/*.mp3 | head -n 1)
           echo "Uploading $output_file to Google Drive folder $GDRIVE_FOLDER_ID"
