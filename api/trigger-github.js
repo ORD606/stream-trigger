@@ -38,6 +38,7 @@ module.exports = async (req, res) => {
     };
 
     console.log('📡 Triggering GitHub Actions with payload:', payload);
+    console.log('🛠 GITHUB_REPOSITORY:', GITHUB_REPOSITORY);
 
     // Send request to GitHub to trigger the workflow
     const response = await fetch(`https://api.github.com/repos/${GITHUB_REPOSITORY}/dispatches`, {
