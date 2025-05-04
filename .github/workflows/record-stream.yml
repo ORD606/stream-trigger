@@ -41,7 +41,7 @@ jobs:
           export OUTPUT_FILE="recordings/${STATION_NAME}_${timestamp}.mp3"
           echo "$OUTPUT_FILE" > output_file_path.txt
 
-          python3 .github/scripts/record_and_upload.py
+          python3 .github/workflows/record_and_upload.py
 
       - name: Debug - Show output file
         run: ls -lh recordings/
