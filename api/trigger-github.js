@@ -1,36 +1,48 @@
 const fetch = require('node-fetch');
-const { GITHUB_API_URL, GITHUB_PAT, VERCEL_API_URL, VERCEL_API_KEY } = process.env;
+const { VERCEL_API_URL, VERCEL_API_KEY } = process.env;
 
-async function triggerVercelRecording(stationName, streamUrl, startTime, endTime, frequency) {
-    try {
-        const payload = {
-            station_name: stationName,
-            stream_url: streamUrl,
-            start_time: startTime,
-            end_time: endTime,
-            frequency: frequency
-        };
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-        console.log('🔧 Triggering Vercel recording with payload:', payload);
+  try {
+    const { station_name, stream_url, start_time, end_time, frequency } = req.body;
 
-        const response = await fetch(`${VERCEL_API_URL}/record`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${VERCEL_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            console.log(`✅ Vercel recording scheduled successfully: ${JSON.stringify(data)}`);
-        } else {
-            console.error(`❌ Error from Vercel: ${data.error}`);
-        }
-    } catch (error) {
-        console.error(`⚠️ Error triggering Vercel recording: ${error.message}`);
+    if (!station_name || !stream_url || !start_time || !end_time) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
-}
 
-triggerVercelRecording('BBC Radio 6Music', 'https://stream.example.com', '2025-05-03 10:13 PM', '2025-05-03 10:15 PM', 'once');
+    const payload = {
+      station_name,
+      stream_url,
+      start_time,
+      end_time,
+      frequency: frequency || 'once',
+    };
+
+    console.log('🔧 Forwarding payload to /record:', payload);
+
+    const response = await fetch(`${VERCEL_API_URL}/record`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${VERCEL_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      console.log('✅ Vercel recording triggered:', data);
+      return res.status(200).json({ message: 'Recording triggered successfully', data });
+    } else {
+      console.error('❌ Error from /record:', data);
+      return res.status(500).json({ error: 'Recording trigger failed', details: data });
+    }
+
+  } catch (error) {
+    console.error('❌ Server error in trigger-github.js:', error.message);
+    return res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+};
