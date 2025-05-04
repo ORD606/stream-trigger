@@ -48,7 +48,7 @@ module.exports = async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        event_type: 'record_stream', // Event type defined in your GitHub Actions workflow
+        event_type: 'record_stream', // Must match the event name in your GitHub Actions workflow
         client_payload: payload,    // Custom payload for the workflow
       }),
     });
