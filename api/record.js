@@ -1,5 +1,3 @@
-import stations from "../../stations.js"; // Import station data
-
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
@@ -10,28 +8,19 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      // Match station name using fuzzy matching
-      const matchedStation = Object.keys(stations).reduce((best, current) => {
-        const similarity = stringSimilarity.compareTwoStrings(station_name.toLowerCase(), current.toLowerCase());
-        return similarity > best.similarity ? { name: current, url: stations[current], similarity } : best;
-      }, { name: null, url: null, similarity: 0 });
-
-      if (!matchedStation.name) {
-        return res.status(404).json({ error: "No matching station found" });
-      }
-
-      // Use matched URL if stream_url is not provided
-      const stationUrl = stream_url || matchedStation.url;
-
       // Calculate duration
       const startDateTime = new Date(`${date}T${start_time}`);
       const endDateTime = new Date(`${date}T${end_time}`);
       const duration = (endDateTime - startDateTime) / 1000;
 
+      if (isNaN(duration) || duration <= 0) {
+        return res.status(400).json({ error: "Invalid start/end time resulting in non-positive duration" });
+      }
+
       // Prepare payload for trigger-github.js
       const payload = {
-        station_name: matchedStation.name,
-        stream_url: stationUrl,
+        station_name,
+        stream_url,
         duration,
         timestamp: startDateTime.toISOString(),
         frequency,
