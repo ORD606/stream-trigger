@@ -1,47 +1,45 @@
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { station_name, stream_url, date, start_time, end_time, frequency } = req.body;
+      const { station_name, stream_url, start_time, end_time, frequency } = req.body;
 
-      // Validate required fields
-      if (!station_name || !date || !start_time || !end_time) {
+      if (!station_name || !stream_url || !start_time || !end_time) {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      // Calculate duration
-      const startDateTime = new Date(`${date}T${start_time}`);
-      const endDateTime = new Date(`${date}T${end_time}`);
-      const duration = (endDateTime - startDateTime) / 1000;
+      // Calculate duration in seconds
+      const startDate = new Date(start_time);
+      const endDate = new Date(end_time);
+      const duration = (endDate - startDate) / 1000;
 
-      if (isNaN(duration) || duration <= 0) {
-        return res.status(400).json({ error: "Invalid start/end time resulting in non-positive duration" });
+      if (duration <= 0) {
+        return res.status(400).json({ error: "Invalid duration" });
       }
 
-      // Prepare payload for trigger-github.js
       const payload = {
         station_name,
         stream_url,
         duration,
-        timestamp: startDateTime.toISOString(),
-        frequency,
+        timestamp: startDate.toISOString(),
+        frequency: frequency || "once"
       };
 
-      // Forward data to trigger-github.js
-      const triggerResponse = await fetch(`${process.env.VERCEL_API_URL}/api/trigger-github`, {
+      const response = await fetch(`${process.env.VERCEL_API_URL}/api/trigger-github`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
-      if (triggerResponse.ok) {
-        return res.status(200).json({ message: "Recording scheduled successfully" });
+      if (response.ok) {
+        const data = await response.json();
+        return res.status(200).json({ message: "✅ Recording triggered", data });
       } else {
-        const error = await triggerResponse.text();
-        return res.status(500).json({ error: "Failed to schedule recording", details: error });
+        const text = await response.text();
+        return res.status(500).json({ error: "Failed to trigger GitHub workflow", details: text });
       }
-    } catch (error) {
-      console.error("Error scheduling recording:", error);
-      return res.status(500).json({ error: "Internal server error", details: error.message });
+    } catch (err) {
+      console.error("❌ Error:", err);
+      return res.status(500).json({ error: "Internal server error", details: err.message });
     }
   }
 
