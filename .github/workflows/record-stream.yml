@@ -20,6 +20,11 @@ jobs:
             exit 1;
           }
 
+      - name: Set Up Python Environment
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib python-dotenv
+
       - name: Prepare for Recording
         run: mkdir -p recordings
 
@@ -37,19 +42,9 @@ jobs:
             exit 1;
           }
 
-      - name: Set Up Python Environment
-        run: |
-          python3 -m pip install --upgrade pip
-          pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
-
       - name: Set Up Google Cloud Credentials
         run: |
           echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service_account.json
-
-      - name: Debug: List Files
-        run: |
-          echo "Current directory contents:"
-          ls -R
 
       - name: Upload to Google Drive
         env:
@@ -57,4 +52,4 @@ jobs:
         run: |
           output_file=$(ls recordings/*.mp3 | head -n 1)
           echo "Uploading $output_file to Google Drive..."
-          python3 google_drive_upload.py "$output_file" "$GDRIVE_FOLDER_ID"
+          python3 .github/workflows/google_drive_upload.py "$output_file" "$GDRIVE_FOLDER_ID"
