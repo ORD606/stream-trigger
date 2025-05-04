@@ -1,0 +1,13 @@
+{
+  "name": "vercel-api-functions",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "trigger-github.js",
+  "scripts": {
+    "start": "node trigger-github.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
+
