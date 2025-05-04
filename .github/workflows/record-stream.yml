@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: 3.10  # ✅ Fixed version
 
       - name: Install dependencies
         run: |
@@ -38,10 +38,37 @@ jobs:
           GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
         run: |
           timestamp=$(date +'%Y%m%d_%H%M%S')
-          export OUTPUT_FILE="recordings/${STATION_NAME}_${timestamp}.mp3"
-          echo "$OUTPUT_FILE" > output_file_path.txt
+          output_file="recordings/${STATION_NAME}_${timestamp}.mp3"
+          echo "$output_file" > output_file_path.txt
+          echo "📤 Uploading $output_file to Google Drive..."
 
-          python3 .github/workflows/record_and_upload.py
+          python3 - <<EOF
+import sys
+import os
+sys.path.append('.github/workflows')
+
+from google_drive_upload import retry_recording, authenticate_service_account, upload_file_to_drive
+
+output_file = os.environ['output_file']
+stream_url = os.environ['STREAM_URL']
+duration = int(os.environ['DURATION'])
+station_name = os.environ['STATION_NAME']
+folder_id = os.environ['GDRIVE_FOLDER_ID']
+
+success = retry_recording(output_file, stream_url, duration, station_name)
+if success:
+    service = authenticate_service_account()
+    upload_file_to_drive(service, output_file, folder_id)
+else:
+    raise Exception('Recording failed after all retry attempts.')
+EOF
+
+        env:
+          output_file: ${{ steps.set_output_file.outputs.output_file }}
+          STREAM_URL: ${{ github.event.client_payload.stream_url }}
+          DURATION: ${{ github.event.client_payload.duration }}
+          STATION_NAME: ${{ github.event.client_payload.station_name }}
+          GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
 
       - name: Debug - Show output file
         run: ls -lh recordings/
