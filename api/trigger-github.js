@@ -1,60 +1,57 @@
 const fetch = require('node-fetch');
-const { VERCEL_API_URL, VERCEL_API_KEY } = process.env;
+const { GITHUB_REPOSITORY, GITHUB_TOKEN } = process.env;
 
 module.exports = async (req, res) => {
-  // Check HTTP method
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
-    // Extract request body
     const { station_name, stream_url, start_time, end_time, frequency } = req.body;
 
-    // Validate required fields
     if (!station_name || !stream_url || !start_time || !end_time) {
-      console.error('❌ Missing required fields in request body:', req.body);
+      console.error('❌ Missing required fields:', req.body);
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Validate the stream_url
-    if (!stream_url.startsWith('http://') && !stream_url.startsWith('https://')) {
-      console.error(`❌ Invalid stream_url: ${stream_url}. It must be an absolute URL.`);
-      return res.status(400).json({ error: 'Stream URL must be an absolute URL' });
+    // Calculate duration in seconds
+    const startDate = new Date(start_time);
+    const endDate = new Date(end_time);
+    const duration = (endDate - startDate) / 1000;
+
+    if (duration <= 0) {
+      return res.status(400).json({ error: 'Invalid duration' });
     }
 
-    // Construct the payload for forwarding
     const payload = {
       station_name,
       stream_url,
-      start_time,
-      end_time,
-      frequency: frequency || 'once', // Default to 'once' if frequency is not provided
+      duration,
+      frequency: frequency || 'once',
     };
 
-    console.log('🔧 Forwarding payload to /record:', payload);
+    console.log('📡 Triggering GitHub Actions with payload:', payload);
 
-    // Send the payload to the Vercel /record API
-    const response = await fetch(`${VERCEL_API_URL}/record`, {
+    // Trigger GitHub Actions
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_REPOSITORY}/dispatches`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${VERCEL_API_KEY}`,
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload), // Ensure payload is properly stringified
+      body: JSON.stringify({
+        event_type: 'record_stream',
+        client_payload: payload,
+      }),
     });
 
-    // Log the full response for debugging
-    const text = await response.text();
-    console.log(`📬 Response from /record: Status ${response.status}, Body: ${text}`);
-
     if (response.ok) {
-      const data = JSON.parse(text); // Parse the JSON response
-      console.log('✅ Vercel recording triggered successfully:', data);
-      return res.status(200).json({ message: 'Recording triggered successfully', data });
+      console.log('✅ GitHub Actions triggered successfully');
+      return res.status(200).json({ message: 'Recording triggered successfully' });
     } else {
-      console.error('❌ Error from /record:', text);
-      return res.status(500).json({ error: 'Recording trigger failed', details: text });
+      const text = await response.text();
+      console.error('❌ Error triggering GitHub Actions:', text);
+      return res.status(500).json({ error: 'Failed to trigger GitHub workflow', details: text });
     }
   } catch (error) {
     console.error('❌ Server error in trigger-github.js:', error.message);
