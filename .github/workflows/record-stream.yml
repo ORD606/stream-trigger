@@ -37,4 +37,4 @@ jobs:
       run: |
         output_file=$(ls recordings/*.mp3 | head -n 1)
         echo "Uploading $output_file..."
-        gdrive upload "$output_file"
+        python3 google_drive_upload.py "$output_file"
