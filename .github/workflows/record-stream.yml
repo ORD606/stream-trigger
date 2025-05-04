@@ -42,7 +42,7 @@ jobs:
           echo "$output_file" > output_file_path.txt
           echo "📤 Uploading $output_file to Google Drive..."
           
-          python3 - <<EOF
+          python3 -c "
 import sys
 sys.path.append('.github/workflows')
 from google_drive_upload import retry_recording, authenticate_service_account, upload_file_to_drive
@@ -54,7 +54,7 @@ if success:
     upload_file_to_drive(service, output_file, '${GDRIVE_FOLDER_ID}')
 else:
     raise Exception('Recording failed after all retry attempts.')
-EOF
+"
 
       - name: Debug - Show output file
         run: ls -lh recordings/
