@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
@@ -33,15 +33,20 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service_account.json
 
-      - name: Run recording script
+      - name: Set environment variables
+        run: |
+          timestamp=$(date +'%Y%m%d_%H%M%S')
+          output_file="recordings/${{ github.event.client_payload.station_name }}_${timestamp}.mp3"
+          echo "OUTPUT_FILE=$output_file" >> $GITHUB_ENV
+
+      - name: Record and upload
         env:
           STATION_NAME: ${{ github.event.client_payload.station_name }}
           STREAM_URL: ${{ github.event.client_payload.stream_url }}
           DURATION: ${{ github.event.client_payload.duration }}
           GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
+          OUTPUT_FILE: ${{ env.OUTPUT_FILE }}
         run: |
-          timestamp=$(date +'%Y%m%d_%H%M%S')
-          export OUTPUT_FILE="recordings/${STATION_NAME}_${timestamp}.mp3"
           echo "📤 Uploading $OUTPUT_FILE to Google Drive..."
           python3 .github/workflows/record_and_upload.py
 
