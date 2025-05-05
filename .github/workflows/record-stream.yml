@@ -6,7 +6,7 @@ on:
 
 jobs:
   record:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # You can try using `ubuntu-22.04` if issues persist with `ubuntu-latest`
 
     steps:
       - name: Checkout code
@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10  # Updated to a supported Python version (3.10)
+          python-version: 3.10  # Use Python 3.10, which is more stable and compatible
           check-latest: false
           token: ${{ secrets.GITHUB_TOKEN }}
           update-environment: true
