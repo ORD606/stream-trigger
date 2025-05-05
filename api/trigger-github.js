@@ -9,25 +9,26 @@ module.exports = async (req, res) => {
   }
 
   try {
-    console.log('📥 Received payload from Glitch:', req.body);
+    console.log('📥 Payload received from Glitch:', req.body);
 
-    const { station_name, stream_url, start_time, end_time, frequency } = req.body;
+    const { station_name, stream_url, start_time, end_time, duration } = req.body;
 
+    // Validate required fields
     if (!station_name || !stream_url || !start_time || !end_time) {
       console.error('❌ Missing required fields in request body:', req.body);
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Construct payload for GitHub Actions
     const payload = {
       station_name,
       stream_url,
       start_time,
       end_time,
-      duration: (new Date(end_time) - new Date(start_time)) / 1000,
-      frequency: frequency || 'once',
+      duration,
     };
 
-    console.log('📡 Payload being sent to GitHub Actions:', payload);
+    console.log('📡 Triggering GitHub Actions with payload:', payload);
 
     const response = await fetch(`https://api.github.com/repos/${GITHUB_REPOSITORY}/dispatches`, {
       method: 'POST',
@@ -45,6 +46,7 @@ module.exports = async (req, res) => {
     console.log(`📬 Response from GitHub API: Status ${response.status}, Body: ${responseText}`);
 
     if (response.ok) {
+      console.log('✅ GitHub Actions triggered successfully');
       return res.status(200).json({ message: 'Recording triggered successfully' });
     } else {
       console.error('❌ Error triggering GitHub Actions:', responseText);
