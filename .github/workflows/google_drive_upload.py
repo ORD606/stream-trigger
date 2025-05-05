@@ -4,7 +4,6 @@ from googleapiclient.http import MediaFileUpload
 import logging
 import os
 import time
-import datetime
 import subprocess
 from threading import Thread
 from dotenv import load_dotenv
@@ -120,7 +119,7 @@ def record_stream(output_file, stream_url, duration, station_name):
             output_file
         ]
 
-        result = subprocess.run(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        result = subprocess.run(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE, timeout=duration+10)
         keep_logging_status = False
 
         if result.returncode == 0:
@@ -129,6 +128,10 @@ def record_stream(output_file, stream_url, duration, station_name):
         else:
             logging.error(f"❌ FFmpeg failed: {result.stderr.decode('utf-8')}")
             return False
+    except subprocess.TimeoutExpired:
+        keep_logging_status = False
+        logging.error(f"❌ Recording timed out after {duration} seconds.")
+        return False
     except Exception as e:
         keep_logging_status = False
         logging.error(f"❌ Exception during recording: {e}")
