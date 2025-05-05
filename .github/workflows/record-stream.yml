@@ -1,4 +1,4 @@
-name: Record Stream
+name: Stream Recording and Upload
 
 on:
   repository_dispatch:
@@ -6,41 +6,48 @@ on:
 
 jobs:
   record:
-    runs-on: ubuntu-22.04  # Changed to ubuntu-22.04 for more stability
+    runs-on: ubuntu-22.04  # Ubuntu 22.04 for stability
 
     steps:
-      - name: Checkout code
+      # Step 1: Checkout the code
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      # Step 2: Set up Python with a stable version (3.10)
+      - name: Set up Python Environment
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10  # Using Python 3.10 as it's stable and supported
+          python-version: 3.10  # Explicitly using Python 3.10 (stable)
           check-latest: false
           token: ${{ secrets.GITHUB_TOKEN }}
           update-environment: true
           allow-prereleases: false
 
-      - name: Install dependencies
+      # Step 3: Install required Python dependencies
+      - name: Install Required Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install google-api-python-client google-auth google-auth-oauthlib python-dotenv
 
-      - name: Check FFmpeg version
+      # Step 4: Install FFmpeg to handle streaming
+      - name: Install FFmpeg
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           ffmpeg -version
 
-      - name: Create recordings directory
+      # Step 5: Create directory to save recordings
+      - name: Create Recordings Directory
         run: mkdir -p recordings
 
-      - name: Create service_account.json from secret
+      # Step 6: Convert service_account.json from GitHub secrets
+      - name: Create service_account.json
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service_account.json
 
-      - name: Record stream and upload to Google Drive
+      # Step 7: Record the stream and upload to Google Drive
+      - name: Record Stream and Upload to Google Drive
         env:
           STATION_NAME: ${{ github.event.client_payload.station_name }}
           STREAM_URL: ${{ github.event.client_payload.stream_url }}
@@ -50,7 +57,7 @@ jobs:
           timestamp=$(date +'%Y%m%d_%H%M%S')
           output_file="recordings/${STATION_NAME}_${timestamp}.mp3"
           echo "$output_file" > output_file_path.txt
-          echo "📤 Uploading $output_file to Google Drive..."
+          echo "🎙️ Recording started: $output_file"
           python3 .github/workflows/record_and_upload.py \
             --station_name "${STATION_NAME}" \
             --stream_url "${STREAM_URL}" \
@@ -58,5 +65,6 @@ jobs:
             --output_file "${output_file}" \
             --gdrive_folder_id "${GDRIVE_FOLDER_ID}"
 
-      - name: Debug - Show output file
+      # Step 8: Debugging - List the files in the recordings directory
+      - name: Debug - Check recorded files
         run: ls -lh recordings
