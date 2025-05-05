@@ -33,7 +33,7 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service_account.json
 
-      - name: Record stream and upload to Google Drive
+      - name: Run recording script
         env:
           STATION_NAME: ${{ github.event.client_payload.station_name }}
           STREAM_URL: ${{ github.event.client_payload.stream_url }}
@@ -41,29 +41,9 @@ jobs:
           GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
         run: |
           timestamp=$(date +'%Y%m%d_%H%M%S')
-          output_file="recordings/${STATION_NAME}_${timestamp}.mp3"
-          echo "$output_file" > output_file_path.txt
-          echo "📤 Uploading $output_file to Google Drive..."
-          
-          python3 <<EOF
-import sys
-sys.path.append('.github/workflows')
-from google_drive_upload import retry_recording, authenticate_service_account, upload_file_to_drive
-
-output_file = '${output_file}'
-try:
-    success = retry_recording(output_file, '${STREAM_URL}', int('${DURATION}'), '${STATION_NAME}')
-    if success:
-        service = authenticate_service_account()
-        upload_file_to_drive(service, output_file, '${GDRIVE_FOLDER_ID}')
-        print("✅ Done uploading.")
-    else:
-        raise Exception("❌ Recording failed after all retry attempts.")
-except Exception as e:
-    import traceback
-    traceback.print_exc()
-    raise
-EOF
+          export OUTPUT_FILE="recordings/${STATION_NAME}_${timestamp}.mp3"
+          echo "📤 Uploading $OUTPUT_FILE to Google Drive..."
+          python3 .github/workflows/record_and_upload.py
 
       - name: Debug - Show output file
         run: ls -lh recordings/
