@@ -44,8 +44,8 @@ jobs:
           output_file="recordings/${STATION_NAME}_${timestamp}.mp3"
           echo "$output_file" > output_file_path.txt
           echo "📤 Uploading $output_file to Google Drive..."
-
-          python3 <<'EOF'
+          
+          python3 <<EOF
 import sys
 sys.path.append('.github/workflows')
 from google_drive_upload import retry_recording, authenticate_service_account, upload_file_to_drive
