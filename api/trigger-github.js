@@ -34,13 +34,23 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'start_time and end_time must be valid ISO 8601 strings' });
     }
 
+    // Calculate duration if not provided
+    let calculatedDuration = duration;
+    if (!duration) {
+      calculatedDuration = (new Date(end_time) - new Date(start_time)) / 1000; // Duration in seconds
+      if (calculatedDuration <= 0) {
+        console.error('❌ Invalid duration: start_time must be before end_time');
+        return res.status(400).json({ error: 'Invalid duration: start_time must be before end_time' });
+      }
+    }
+
     // Construct payload for GitHub Actions
     const payload = {
       station_name,
       stream_url,
       start_time,
       end_time,
-      duration: duration || (new Date(end_time) - new Date(start_time)) / 1000, // Calculate duration if not provided
+      duration: calculatedDuration,
       frequency: frequency || 'once', // Default to 'once' if frequency is not provided
     };
 
