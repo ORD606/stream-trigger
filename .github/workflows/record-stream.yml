@@ -50,13 +50,13 @@ jobs:
           output_file="recordings/${{ github.event.client_payload.station_name }}_${timestamp}.mp3"
           echo "OUTPUT_FILE=$output_file" >> $GITHUB_ENV
 
-      # Step 8: Record stream with retry logic
-      - name: Record stream
+      # Step 8: Record stream and upload
+      - name: Record stream and upload
         env:
           STATION_NAME: ${{ github.event.client_payload.station_name }}
           STREAM_URL: ${{ github.event.client_payload.stream_url }}
           DURATION: ${{ github.event.client_payload.duration }}
-          OUTPUT_FILE: ${{ env.OUTPUT_FILE }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
         run: |
           echo "🎙️ Starting recording: $STATION_NAME"
           python3 .github/workflows/record_and_upload.py
