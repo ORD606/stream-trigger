@@ -15,7 +15,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: 3.10  # Corrected to a valid Python version
+          check-latest: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          update-environment: true
+          allow-prereleases: false
 
       - name: Install dependencies
         run: |
