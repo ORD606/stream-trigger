@@ -6,7 +6,7 @@ on:
 
 jobs:
   record:
-    runs-on: ubuntu-latest  # You can use `ubuntu-22.04` if needed, but `ubuntu-latest` should be fine.
+    runs-on: ubuntu-22.04  # Changed to ubuntu-22.04 for more stability
 
     steps:
       - name: Checkout code
@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10  # Use Python 3.10, which is stable and supported.
+          python-version: 3.10  # Using Python 3.10 as it's stable and supported
           check-latest: false
           token: ${{ secrets.GITHUB_TOKEN }}
           update-environment: true
