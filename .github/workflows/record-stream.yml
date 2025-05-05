@@ -50,8 +50,26 @@ jobs:
           output_file="recordings/${{ github.event.client_payload.station_name }}_${timestamp}.mp3"
           echo "OUTPUT_FILE=$output_file" >> $GITHUB_ENV
 
-      # Step 8: Record stream and upload to Google Drive
-      - name: Record and upload
+      # Step 8: Attempt to record stream and handle potential server errors
+      - name: Record stream with retry logic
+        env:
+          STREAM_URL: ${{ github.event.client_payload.stream_url }}
+          DURATION: ${{ github.event.client_payload.duration }}
+          OUTPUT_FILE: ${{ env.OUTPUT_FILE }}
+        run: |
+          echo "🎙️ Starting recording: $STATION_NAME"
+          RETRY_COUNT=5
+          RETRY_DELAY=10
+          for i in $(seq 1 $RETRY_COUNT); do
+            echo "Attempt $i: Recording from $STREAM_URL"
+            ffmpeg -y -f hls -i "$STREAM_URL" -c:a libmp3lame -b:a 320k -t "$DURATION" "$OUTPUT_FILE" && break || {
+              echo "Attempt $i failed. Retrying in $RETRY_DELAY seconds..."
+              sleep $RETRY_DELAY
+            }
+          done
+
+      # Step 9: Upload to Google Drive
+      - name: Upload to Google Drive
         env:
           STATION_NAME: ${{ github.event.client_payload.station_name }}
           STREAM_URL: ${{ github.event.client_payload.stream_url }}
@@ -59,8 +77,6 @@ jobs:
           GDRIVE_FOLDER_ID: "1MkS_2E2K_f4yiOXvBWjp-XG-ZoMHLd1J"
           OUTPUT_FILE: ${{ env.OUTPUT_FILE }}
         run: |
-          echo "🎙️ Starting recording: $STATION_NAME"
-          ffmpeg -y -i "$STREAM_URL" -c:a libmp3lame -b:a 320k -t "$DURATION" "$OUTPUT_FILE"
           echo "📤 Uploading $OUTPUT_FILE to Google Drive..."
           python3 .github/workflows/record_and_upload.py \
             --station_name "$STATION_NAME" \
@@ -69,6 +85,6 @@ jobs:
             --output_file "$OUTPUT_FILE" \
             --gdrive_folder_id "$GDRIVE_FOLDER_ID"
 
-      # Step 9: Debug - Verify recorded files
+      # Step 10: Debug - Verify recorded files
       - name: Debug - Show output file
         run: ls -lh recordings/
