@@ -10,14 +10,14 @@ module.exports = async (req, res) => {
 
   try {
     // Log the incoming request body for debugging
-    console.log('📥 Payload received from Glitch:', req.body);
+    console.log('📥 Payload received from client:', req.body);
 
     const { station_name, stream_url, start_time, end_time, duration, frequency } = req.body;
 
     // Validate required fields
     if (!station_name || !stream_url || !start_time || !end_time) {
       console.error('❌ Missing required fields in request body:', req.body);
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ error: 'Missing required fields: station_name, stream_url, start_time, and end_time are required' });
     }
 
     // Ensure start_time and end_time are valid ISO 8601 strings
