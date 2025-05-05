@@ -10,34 +10,36 @@ module.exports = async (req, res) => {
 
   try {
     // Log the incoming request body for debugging
-    console.log('📥 Payload received from client:', req.body);
+    console.log('📥 Raw Payload received:', req.body);
 
-    const { station_name, stream_url, start_time, end_time, duration, frequency } = req.body;
+    const { station_name, stream_url, date, start_time, end_time, duration, frequency } = req.body;
 
     // Validate required fields
-    if (!station_name || !stream_url || !start_time || !end_time) {
+    if (!station_name || !stream_url || !date || !start_time || !end_time) {
       console.error('❌ Missing required fields in request body:', req.body);
-      return res.status(400).json({ error: 'Missing required fields: station_name, stream_url, start_time, and end_time are required' });
+      return res.status(400).json({
+        error: 'Missing required fields: station_name, stream_url, date, start_time, and end_time are required',
+      });
     }
 
-    // Ensure start_time and end_time are valid ISO 8601 strings
-    const isValidISO8601 = (date) => {
-      try {
-        return new Date(date).toISOString() === date;
-      } catch (e) {
-        return false;
-      }
-    };
+    // Combine date with start_time and end_time to create ISO 8601 strings
+    const startDateTime = new Date(`${date} ${start_time}`);
+    const endDateTime = new Date(`${date} ${end_time}`);
 
-    if (!isValidISO8601(start_time) || !isValidISO8601(end_time)) {
-      console.error('❌ Invalid ISO 8601 format for start_time or end_time:', { start_time, end_time });
-      return res.status(400).json({ error: 'start_time and end_time must be valid ISO 8601 strings' });
+    // Ensure valid date conversion
+    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+      console.error('❌ Invalid date, start_time, or end_time:', { date, start_time, end_time });
+      return res.status(400).json({ error: 'Invalid date, start_time, or end_time format' });
     }
+
+    // Convert to ISO 8601 format
+    const isoStartTime = startDateTime.toISOString();
+    const isoEndTime = endDateTime.toISOString();
 
     // Calculate duration if not provided
     let calculatedDuration = duration;
     if (!duration) {
-      calculatedDuration = (new Date(end_time) - new Date(start_time)) / 1000; // Duration in seconds
+      calculatedDuration = (new Date(isoEndTime) - new Date(isoStartTime)) / 1000; // Duration in seconds
       if (calculatedDuration <= 0) {
         console.error('❌ Invalid duration: start_time must be before end_time');
         return res.status(400).json({ error: 'Invalid duration: start_time must be before end_time' });
@@ -48,13 +50,13 @@ module.exports = async (req, res) => {
     const payload = {
       station_name,
       stream_url,
-      start_time,
-      end_time,
+      start_time: isoStartTime,
+      end_time: isoEndTime,
       duration: calculatedDuration,
       frequency: frequency || 'once', // Default to 'once' if frequency is not provided
     };
 
-    console.log('📡 Triggering GitHub Actions with payload:', payload);
+    console.log('📡 Triggering GitHub Actions with converted payload:', payload);
 
     // Send request to GitHub to trigger the workflow
     const response = await fetch(`https://api.github.com/repos/${GITHUB_REPOSITORY}/dispatches`, {
