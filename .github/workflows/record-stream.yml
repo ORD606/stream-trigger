@@ -9,24 +9,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # Step 3: Install FFmpeg
       - name: Install FFmpeg
         run: |
           sudo apt update
           sudo apt install -y ffmpeg
 
-      # Step 4: Wait until the scheduled start time
-      - name: Wait until scheduled start time
+      - name: Wait until scheduled time
         env:
           START_TIME: ${{ github.event.client_payload.start_time }}
         run: |
@@ -34,28 +30,22 @@ jobs:
             echo "❌ Missing START_TIME. Exiting."
             exit 1
           fi
-          # Validate START_TIME format
           if ! date --date="$START_TIME" >/dev/null 2>&1; then
             echo "❌ Invalid START_TIME format. Exiting."
             exit 1
           fi
-          echo "Scheduled start time: $START_TIME"
-          # Wait until the scheduled start time
           while [ "$(date +'%Y-%m-%dT%H:%M:%S')" \< "$START_TIME" ]; do
-            echo "Current time: $(date +'%Y-%m-%dT%H:%M:%S'). Waiting..."
+            echo "Waiting for scheduled time..."
             sleep 5
           done
-          echo "🎬 It's time to start recording!"
+          echo "🎬 Recording started!"
 
-      # Step 5: Record the stream
-      - name: Record stream
+      - name: Record the stream
         env:
           STREAM_URL: ${{ github.event.client_payload.stream_url }}
           DURATION: ${{ github.event.client_payload.duration }}
         run: |
-          echo "Starting recording from $STREAM_URL for $DURATION seconds"
-          ffmpeg -i "$STREAM_URL" -t "$DURATION" -c copy "recording.mp3"
+          ffmpeg -i "$STREAM_URL" -t "$DURATION" -c copy recording.mp3
 
-      # Step 6: Upload the recording
       - name: Upload recording
         run: echo "Upload logic here"
