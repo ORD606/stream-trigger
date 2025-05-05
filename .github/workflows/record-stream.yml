@@ -17,11 +17,8 @@ jobs:
       - name: Set up Python Environment
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10  # Explicitly using Python 3.10 (stable)
+          python-version: 3.10  # Correct version specified here
           check-latest: false
-          token: ${{ secrets.GITHUB_TOKEN }}
-          update-environment: true
-          allow-prereleases: false
 
       # Step 3: Install required Python dependencies
       - name: Install Required Dependencies
@@ -40,7 +37,7 @@ jobs:
       - name: Create Recordings Directory
         run: mkdir -p recordings
 
-      # Step 6: Convert service_account.json from GitHub secrets
+      # Step 6: Create service_account.json from GitHub secrets
       - name: Create service_account.json
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
