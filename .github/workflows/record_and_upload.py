@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import time
 import logging
 from google_drive_upload import retry_recording, authenticate_service_account, upload_file_to_drive, test_stream_url
 
