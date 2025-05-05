@@ -43,14 +43,26 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service_account.json
 
-      # Step 7: Set environment variables for the recording
+      # Step 7: Wait until the scheduled start time
+      - name: Wait until scheduled time
+        env:
+          START_TIME: ${{ github.event.client_payload.start_time }} # Example: 20250505_091900 (YYYYMMDD_HHMMSS)
+        run: |
+          echo "Scheduled start time: $START_TIME"
+          while [ "$(date +'%Y%m%d_%H%M%S')" -lt "$START_TIME" ]; do
+            echo "Current time: $(date +'%Y%m%d_%H%M%S'). Waiting..."
+            sleep 5
+          done
+          echo "🎬 It's time to start recording!"
+
+      # Step 8: Set environment variables for the recording
       - name: Set environment variables
         run: |
           timestamp=$(date +'%Y%m%d_%H%M%S')
           output_file="recordings/${{ github.event.client_payload.station_name }}_${timestamp}.mp3"
           echo "OUTPUT_FILE=$output_file" >> $GITHUB_ENV
 
-      # Step 8: Record stream and upload
+      # Step 9: Record stream and upload
       - name: Record stream and upload
         env:
           STATION_NAME: ${{ github.event.client_payload.station_name }}
@@ -61,6 +73,6 @@ jobs:
           echo "🎙️ Starting recording: $STATION_NAME"
           python3 .github/workflows/record_and_upload.py
 
-      # Step 9: Debugging - Verify recordings directory
+      # Step 10: Debugging - Verify recordings directory
       - name: Debug - Show output file
         run: ls -lh recordings/
