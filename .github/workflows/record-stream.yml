@@ -22,11 +22,6 @@ jobs:
           sudo apt update
           sudo apt install -y ffmpeg
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install google-api-python-client google-auth google-auth-oauthlib python-dotenv
-
       - name: Wait until scheduled time
         env:
           START_TIME: ${{ github.event.client_payload.start_time }}
@@ -42,15 +37,13 @@ jobs:
           done
           echo "🎬 It's time to start recording!"
 
-      - name: Set environment variables
-        run: |
-          timestamp=$(date +'%Y%m%d_%H%M%S')
-          output_file="recordings/${{ github.event.client_payload.station_name }}_${timestamp}.mp3"
-          echo "OUTPUT_FILE=$output_file" >> $GITHUB_ENV
-
-      - name: Record stream and upload
+      - name: Record stream
         env:
-          STATION_NAME: ${{ github.event.client_payload.station_name }}
           STREAM_URL: ${{ github.event.client_payload.stream_url }}
           DURATION: ${{ github.event.client_payload.duration }}
-        run: python3 .github/workflows/record_and_upload.py
+        run: |
+          echo "Starting recording from $STREAM_URL for $DURATION seconds"
+          ffmpeg -i "$STREAM_URL" -t "$DURATION" -c copy "recording.mp3"
+
+      - name: Upload recording
+        run: echo "Upload logic here"
