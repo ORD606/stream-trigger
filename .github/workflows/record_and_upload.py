@@ -2,16 +2,7 @@ import os
 import sys
 import subprocess
 import time
-
-# Include path to the workflow utilities
-sys.path.append(".github/workflows")
-
-from google_drive_upload import (
-    retry_recording,
-    authenticate_service_account,
-    upload_file_to_drive,
-    test_stream_url,
-)
+from google_drive_upload import retry_recording, authenticate_service_account, upload_file_to_drive, test_stream_url
 
 # Pull values from environment variables
 output_file = os.environ["OUTPUT_FILE"]
@@ -23,7 +14,7 @@ folder_id = os.environ["GDRIVE_FOLDER_ID"]
 print(f"🎙️ Starting recording for {station_name}")
 print(f"📁 Output file: {output_file}")
 
-# Check stream is alive before wasting time
+# Check if stream is alive before wasting time
 print("🔍 Testing stream URL...")
 if not test_stream_url(stream_url):
     raise Exception("❌ Stream URL is not responding. Exiting early.")
@@ -34,7 +25,7 @@ def record_stream():
     command = [
         "ffmpeg",
         "-y",
-        "-loglevel", "info",  # Use 'debug' for even more
+        "-loglevel", "info",  # Use 'debug' for even more verbose logs
         "-i", stream_url,
         "-t", str(duration),
         "-c:a", "libmp3lame",
