@@ -19,11 +19,21 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Calculate duration in seconds
-    const startDate = new Date(start_time);
-    const endDate = new Date(end_time);
-    const duration = (endDate - startDate) / 1000;
+    // Validate date formats
+    let startDate, endDate;
+    try {
+      startDate = new Date(start_time);
+      endDate = new Date(end_time);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        throw new Error('Invalid date format');
+      }
+    } catch (error) {
+      console.error('❌ Invalid date format for start_time or end_time:', error.message);
+      return res.status(400).json({ error: 'Invalid date format for start_time or end_time' });
+    }
 
+    // Calculate duration in seconds
+    const duration = (endDate - startDate) / 1000;
     if (duration <= 0) {
       console.error('❌ Invalid duration: Start time must be before end time.');
       return res.status(400).json({ error: 'Invalid duration' });
@@ -33,6 +43,8 @@ module.exports = async (req, res) => {
     const payload = {
       station_name,
       stream_url,
+      start_time,  // Include start_time in the payload
+      end_time,    // Include end_time in the payload
       duration,
       frequency: frequency || 'once', // Default to 'once' if frequency is not provided
     };
